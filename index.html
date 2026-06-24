@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warming at depth — Gulf of Mexico</title>
+<style>
+  :root{
+    --bg:#fbfaf8;
+    --ink:#1a1a1a;
+    --muted:#6b6b6b;
+    --hair:#d9d6d0;
+    --serif: Georgia, "Times New Roman", Times, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .wrap{
+    max-width:540px;
+    margin:0 auto;
+    padding:32px 20px 56px;
+  }
+  .kicker{
+    font-family:var(--sans);
+    font-size:12px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+    font-weight:600;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:30px;
+    line-height:1.12;
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .dek{
+    font-family:var(--serif);
+    font-size:17px;
+    color:var(--muted);
+    margin:0 0 26px;
+    max-width:42ch;
+  }
+  figure{margin:0;}
+  .chart{width:100%;height:auto;display:block;}
+  .legend{width:100%;height:auto;display:block;margin-top:22px;}
+  .controls{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .toggle{
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--ink);
+    background:transparent;
+    border:1px solid var(--hair);
+    border-radius:999px;
+    padding:6px 13px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .toggle:hover{border-color:#b8b4ac;}
+  .toggle:focus-visible{outline:2px solid #5a7d9a;outline-offset:2px;}
+  .toggle .dot{
+    width:16px;height:10px;border-radius:2px;
+    border:1px solid #555;
+    background:transparent;
+    display:inline-block;
+  }
+  .toggle[aria-pressed="true"]{border-color:var(--ink);}
+  .toggle[aria-pressed="true"] .dot{background:#2b2b2b;border-color:#2b2b2b;}
+  .source{
+    font-family:var(--mono);
+    font-size:11px;
+    line-height:1.5;
+    color:var(--muted);
+    margin-top:30px;
+    padding-top:16px;
+    border-top:1px solid var(--hair);
+    max-width:64ch;
+  }
+  /* SVG text styles */
+  .ax-label{font-family:var(--sans);font-size:9px;fill:var(--muted);}
+  .ax-tick{stroke:var(--hair);stroke-width:1;}
+  .val-label{font-family:var(--mono);font-size:8.5px;}
+  .anno-text{font-family:var(--sans);font-size:10px;fill:var(--ink);}
+  .anno-lead{stroke:#9a948c;stroke-width:1;}
+  .anno-dot{fill:#3a3a3a;}
+  .deep-note{font-family:var(--sans);font-size:9.5px;font-style:italic;fill:var(--muted);}
+  .surface-line{stroke:#7a1500;stroke-width:1.4;}
+  .col-frame{fill:none;stroke:#cdbfae;stroke-width:.75;}
+  .legend-title{font-family:var(--sans);font-size:10px;fill:var(--ink);}
+  .legend-tick{font-family:var(--mono);font-size:9px;fill:var(--muted);}
+  .profile-path{
+    fill:none;stroke:#27170f;stroke-width:1.4;stroke-linejoin:round;
+    opacity:0;transition:opacity .25s ease;
+  }
+  .show-profile .profile-path{opacity:.9;}
+
+  /* fill-down reveal, motion-safe only */
+  #colClipRect{height:560px;}
+  @media (prefers-reduced-motion: no-preference){
+    #colClipRect{animation:filldown 1100ms cubic-bezier(.4,.1,.2,1) both;}
+    @keyframes filldown{from{height:0px;}to{height:560px;}}
+  }
+
+  .visually-hidden{
+    position:absolute!important;width:1px;height:1px;
+    padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);
+    white-space:nowrap;border:0;
+  }
+  @media (max-width:420px){
+    h1{font-size:25px;}
+    .dek{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="kicker">Gulf of Mexico</p>
+  <!-- Headline & dek are placeholders for the author to rewrite. -->
+  <h1>The Gulf is warming all the way down.</h1>
+  <p class="dek">The sea surface is heating fastest, but the warming reaches deep into the water column.</p>
+
+  <figure>
+    <svg class="chart" viewBox="0 0 360 650" role="img"
+         aria-labelledby="chartTitle chartDesc" id="chart">
+      <title id="chartTitle">Gulf of Mexico ocean warming by depth, 1955–2022</title>
+      <desc id="chartDesc">A vertical cross-section of the water column from the sea
+        surface to 2,000 meters, colored by how fast each depth is warming. Color
+        runs from pale at slow rates to deep red at fast rates on a fixed scale of
+        0 to 0.20 degrees Celsius per decade. The strongest warming, about 0.19 to
+        0.20 degrees per decade, is near the surface; it falls off sharply through
+        the thermocline between roughly 150 and 500 meters and continues, faintly,
+        to 2,000 meters.</desc>
+
+      <defs>
+        <linearGradient id="depthRamp" x1="0" y1="0" x2="0" y2="1">
+          <!-- stops generated in JS -->
+        </linearGradient>
+        <clipPath id="colClip">
+          <rect id="colClipRect" x="42" y="16" width="44"></rect>
+        </clipPath>
+      </defs>
+
+      <!-- depth axis, column, labels, annotations injected by JS -->
+      <g id="svgRoot"></g>
+    </svg>
+
+    <!-- Color-scale legend -->
+    <svg class="legend" viewBox="0 0 360 56" role="img" aria-label="Color scale: warming rate in degrees Celsius per decade, from 0 (pale) to 0.20 (deep red).">
+      <defs>
+        <linearGradient id="legendRamp" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0"    stop-color="#fff7ec"/>
+          <stop offset="0.20" stop-color="#fee8c8"/>
+          <stop offset="0.40" stop-color="#fdbb84"/>
+          <stop offset="0.60" stop-color="#fc8d59"/>
+          <stop offset="0.80" stop-color="#e34a33"/>
+          <stop offset="1"    stop-color="#b30000"/>
+        </linearGradient>
+      </defs>
+      <text class="legend-title" x="6" y="12">Warming rate (°C per decade)</text>
+      <rect x="6" y="20" width="348" height="12" fill="url(#legendRamp)" stroke="#cdbfae" stroke-width=".5"/>
+      <g id="legendTicks"></g>
+    </svg>
+
+    <div class="controls">
+      <button class="toggle" id="profileBtn" type="button" aria-pressed="false">
+        <span class="dot" aria-hidden="true"></span>
+        Show exact profile line
+      </button>
+    </div>
+
+    <figcaption class="source">
+      Source: NOAA World Ocean Atlas 2023 decadal climatology (in-situ ocean
+      profiles). Warming rate is the linear temperature trend at each depth,
+      1955–2022, averaged over the Gulf of Mexico. Surface rate independently
+      matches Wang et al. (2023).
+    </figcaption>
+  </figure>
+
+  <!-- Visually-hidden data table for screen readers / honesty -->
+  <table class="visually-hidden" id="dataTable">
+    <caption>Gulf of Mexico warming rate by depth, 1955–2022 (°C per decade)</caption>
+    <thead><tr><th scope="col">Depth (m)</th><th scope="col">Warming rate (°C/decade)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Data (embedded verbatim; do not re-derive) ----
+  // [depth_in_meters, warming_rate_C_per_decade], surface -> 2,000 m
+  var DATA = [[0,0.1719],[5,0.1807],[10,0.1862],[15,0.1922],[20,0.1943],[25,0.1951],[30,0.1969],[35,0.1946],[40,0.1918],[45,0.1882],[50,0.1851],[55,0.1799],[60,0.1779],[65,0.1716],[70,0.1721],[75,0.1723],[80,0.1691],[85,0.165],[90,0.1606],[95,0.1575],[100,0.152],[125,0.1388],[150,0.1345],[175,0.1211],[200,0.1082],[225,0.0834],[250,0.0645],[275,0.05],[300,0.0397],[325,0.0399],[350,0.0319],[375,0.0284],[400,0.022],[425,0.0194],[450,0.0226],[475,0.0243],[500,0.0342],[550,0.0324],[600,0.0372],[650,0.0323],[700,0.036],[750,0.0375],[800,0.0398],[850,0.0353],[900,0.0405],[950,0.0329],[1000,0.0296],[1050,0.0267],[1100,0.023],[1150,0.0168],[1200,0.0125],[1250,0.0141],[1300,0.0143],[1350,0.0124],[1400,0.0102],[1450,0.0089],[1500,0.0105],[1550,0.013],[1600,0.0123],[1650,0.0117],[1700,0.0108],[1750,0.0106],[1800,0.0107],[1850,0.0099],[1900,0.0094],[1950,0.0081],[2000,0.0119]];
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  // ---- Geometry (SVG user units; viewBox 0 0 360 650) ----
+  var TOP = 16, COL_H = 560, BOTTOM = TOP + COL_H; // 16 -> 576
+  var COL_X = 42, COL_W = 44, COL_R = COL_X + COL_W; // column 42..86
+  var DOMAIN = 0.20; // fixed color-scale domain, do NOT auto-scale
+
+  function depthY(d){ return TOP + (d / 2000) * COL_H; }
+  function rateX(r){ return COL_X + (Math.min(r, DOMAIN) / DOMAIN) * COL_W; }
+
+  // ---- ColorBrewer "OrRd" sequential ramp, fixed domain 0..0.20 ----
+  var ANCHORS = [
+    [0.00,[255,247,236]], // #fff7ec
+    [0.04,[254,232,200]], // #fee8c8
+    [0.08,[253,187,132]], // #fdbb84
+    [0.12,[252,141, 89]], // #fc8d59
+    [0.16,[227, 74, 51]], // #e34a33
+    [0.20,[179,  0,  0]]  // #b30000
+  ];
+  function ramp(v){
+    if (v <= ANCHORS[0][0]) return rgb(ANCHORS[0][1]);
+    if (v >= ANCHORS[ANCHORS.length-1][0]) return rgb(ANCHORS[ANCHORS.length-1][1]);
+    for (var i=0;i<ANCHORS.length-1;i++){
+      var a=ANCHORS[i], b=ANCHORS[i+1];
+      if (v>=a[0] && v<=b[0]){
+        var t=(v-a[0])/(b[0]-a[0]);
+        return rgb([
+          Math.round(a[1][0]+(b[1][0]-a[1][0])*t),
+          Math.round(a[1][1]+(b[1][1]-a[1][1])*t),
+          Math.round(a[1][2]+(b[1][2]-a[1][2])*t)
+        ]);
+      }
+    }
+    return rgb(ANCHORS[0][1]);
+  }
+  function rgb(c){ return "rgb("+c[0]+","+c[1]+","+c[2]+")"; }
+
+  function el(name, attrs, text){
+    var n=document.createElementNS(SVG_NS,name);
+    if(attrs) for(var k in attrs) n.setAttribute(k,attrs[k]);
+    if(text!=null) n.textContent=text;
+    return n;
+  }
+
+  // ---- 1. Gradient stops (one per data point) ----
+  var grad=document.getElementById("depthRamp");
+  DATA.forEach(function(d){
+    grad.appendChild(el("stop",{
+      offset:(d[0]/2000*100)+"%",
+      "stop-color":ramp(d[1])
+    }));
+  });
+
+  var root=document.getElementById("svgRoot");
+
+  // ---- 2. The gradient column (clipped for fill-down reveal) ----
+  var colGroup=el("g",{"clip-path":"url(#colClip)"});
+  colGroup.appendChild(el("rect",{x:COL_X,y:TOP,width:COL_W,height:COL_H,fill:"url(#depthRamp)"}));
+  root.appendChild(colGroup);
+  // thin frame + surface line
+  root.appendChild(el("rect",{x:COL_X,y:TOP,width:COL_W,height:COL_H,"class":"col-frame"}));
+  root.appendChild(el("line",{x1:COL_X,y1:TOP,x2:COL_R,y2:TOP,"class":"surface-line"}));
+
+  // ---- 3. Depth axis (left) ----
+  var AX_TICKS=[0,250,500,750,1000,1500,2000];
+  AX_TICKS.forEach(function(d){
+    var y=depthY(d);
+    root.appendChild(el("line",{x1:COL_X-5,y1:y,x2:COL_X,y2:y,"class":"ax-tick"}));
+    var lab=el("text",{x:COL_X-8,y:y+3,"text-anchor":"end","class":"ax-label"},
+      d.toLocaleString("en-US"));
+    root.appendChild(lab);
+  });
+  // axis unit
+  root.appendChild(el("text",{x:COL_X-8,y:TOP-6,"text-anchor":"end","class":"ax-label"},"Depth (m)"));
+
+  // ---- 4. Direct value labels on the column (quantitative honesty) ----
+  function rateAt(depth){
+    for(var i=0;i<DATA.length;i++) if(DATA[i][0]===depth) return DATA[i][1];
+    return null;
+  }
+  [[30],[250],[2000]].forEach(function(p){
+    var d=p[0], r=rateAt(d), y=depthY(d);
+    var dark = r > 0.13; // dark column -> white text, else ink
+    var yy = d===2000 ? y-4 : y+3; // keep 2000 label inside column
+    root.appendChild(el("text",{
+      x:COL_R-3, y:yy, "text-anchor":"end", "class":"val-label",
+      fill: dark ? "#ffffff" : "#3a1a10"
+    }, r.toFixed(3)));
+  });
+
+  // ---- 5. Annotations with thin leader lines ----
+  var ANNOS=[
+    {depth:30,  lines:["Sea surface: +0.19 °C per decade —","about twice the global-ocean rate"]},
+    {depth:250, lines:["Warming falls off sharply","through the thermocline"]},
+    {depth:1000,lines:["The upper 1,000 m holds 80–90%","of the heat the Gulf has absorbed"]}
+  ];
+  var LH=11.5, TX=112;
+  ANNOS.forEach(function(a){
+    var y=depthY(a.depth);
+    root.appendChild(el("circle",{cx:COL_R,cy:y,r:1.8,"class":"anno-dot"}));
+    root.appendChild(el("line",{x1:COL_R+2,y1:y,x2:TX-4,y2:y,"class":"anno-lead"}));
+    var n=a.lines.length;
+    var first=y-((n-1)/2)*LH;
+    var t=el("text",{x:TX,"class":"anno-text"});
+    a.lines.forEach(function(ln,i){
+      t.appendChild(el("tspan",{x:TX,y:first+i*LH},ln));
+    });
+    root.appendChild(t);
+  });
+
+  // ---- bottom note: below the column, beyond the view (text only, no color) ----
+  root.appendChild(el("line",{x1:COL_X+COL_W/2,y1:BOTTOM,x2:COL_X+COL_W/2,y2:BOTTOM+14,
+    stroke:"#bdb6ac","stroke-width":1,"stroke-dasharray":"2 2"}));
+  var note=el("text",{x:6,"class":"deep-note"});
+  ["Below 2,000 m, beyond this view, the seafloor is still warming",
+   "about 0.018 °C per decade (Ochoa et al. 2021)."].forEach(function(ln,i){
+    note.appendChild(el("tspan",{x:6,y:BOTTOM+30+i*12},ln));
+  });
+  root.appendChild(note);
+
+  // ---- 6. Optional thin profile line overlay (exact rate vs depth) ----
+  var pts=DATA.map(function(d){return rateX(d[1]).toFixed(2)+","+depthY(d[0]).toFixed(2);}).join(" ");
+  var profile=el("polyline",{points:pts,"class":"profile-path"});
+  root.appendChild(profile);
+
+  // ---- Legend ticks ----
+  var legTicks=document.getElementById("legendTicks");
+  [0,0.05,0.10,0.15,0.20].forEach(function(v){
+    var x=6+(v/0.20)*348;
+    legTicks.appendChild(el("line",{x1:x,y1:32,x2:x,y2:36,stroke:"#9a948c","stroke-width":1}));
+    legTicks.appendChild(el("text",{x:x,y:47,"text-anchor":"middle","class":"legend-tick"},
+      v.toFixed(2)));
+  });
+
+  // ---- Profile toggle ----
+  var btn=document.getElementById("profileBtn");
+  var fig=document.getElementById("chart");
+  btn.addEventListener("click",function(){
+    var on=btn.getAttribute("aria-pressed")==="true";
+    btn.setAttribute("aria-pressed", String(!on));
+    fig.classList.toggle("show-profile", !on);
+  });
+
+  // ---- Hidden data table ----
+  var tb=document.querySelector("#dataTable tbody");
+  DATA.forEach(function(d){
+    var tr=document.createElement("tr");
+    var td1=document.createElement("td"); td1.textContent=d[0];
+    var td2=document.createElement("td"); td2.textContent=d[1].toFixed(4);
+    tr.appendChild(td1); tr.appendChild(td2); tb.appendChild(tr);
+  });
+})();
+</script>
+</body>
+</html>
