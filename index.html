@@ -122,7 +122,7 @@
       <desc id="chartDesc">A vertical cross-section of the water column from the sea
         surface to 6,560 feet, colored by how fast each depth is warming. Color
         runs from pale at slow rates to deep red at fast rates on a fixed scale of
-        0 to 0.36 degrees Fahrenheit per decade. The strongest warming, about 0.34
+        0 to 0.36 degrees Fahrenheit per decade. The strongest warming, about 0.35
         degrees Fahrenheit per decade, is near the surface; it falls off sharply
         around 800 feet below the surface and continues, faintly, to 6,560 feet.</desc>
 
@@ -170,11 +170,12 @@
     </svg>
 
     <figcaption class="source">
-      Sources: Ocean temperature data from NOAA's World Ocean Atlas 2023
-      (1955–2022). Global-ocean surface warming rate from <i>Upper-Oceanic
-      Warming in the Gulf of Mexico between 1950 and 2020</i> by Zhankun Wang et
-      al. Seafloor warming from <i>Deep-Water Warming in the Gulf of Mexico from
-      2003 to 2019</i> by José Ochoa et al.
+      Sources: Ocean temperature profile data from NOAA's World Ocean Atlas 2023
+      (1955–2022). Gulf and global-ocean surface warming rates, the ~1.8 °F
+      sea-surface increase since 1970, and the upper-layer share of absorbed heat
+      from <i>Upper-Oceanic Warming in the Gulf of Mexico between 1950 and 2020</i>
+      by Zhankun Wang et al. Seafloor warming from <i>Deep-Water Warming in the
+      Gulf of Mexico from 2003 to 2019</i> by José Ochoa et al.
     </figcaption>
   </figure>
 
@@ -284,7 +285,7 @@
   // the trailing digits, so finer labels imply false precision.
   // The deepest column label is dropped: that depth is least reliable, and the
   // deep callout owns the deep story (one number per idea).
-  [[30,"0.34"],[250,"0.11"]].forEach(function(p){
+  [[30,"0.35"],[250,"0.12"]].forEach(function(p){
     var d=p[0], r=rateAt(d), y=depthY(d);
     var dark = r > 0.13; // dark column -> white text, else ink
     root.appendChild(el("text",{
@@ -295,9 +296,9 @@
 
   // ---- 5. Annotations with thin leader lines ----
   var ANNOS=[
-    {depth:30,  lines:["Sea surface: about +0.34 °F per decade —","the layer warming fastest"]},
+    {depth:30,  lines:["Near the surface: about +0.35 °F per decade —","the layer warming fastest"]},
     {depth:250, lines:["Warming falls off sharply","around 800 feet below the surface"]},
-    {depth:1000,lines:["The upper 3,300 feet holds 80–90%","of the heat the Gulf has absorbed"]}
+    {depth:1000,lines:["The upper 3,300 feet holds 80–90%","of the warming in the upper 6,560 feet"]}
   ];
   var LH=11.5, TX=112;
   ANNOS.forEach(function(a){
