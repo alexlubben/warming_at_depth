@@ -95,6 +95,13 @@
     border-top:1px solid var(--hair);
     max-width:64ch;
   }
+  .scale-note{
+    font-family:var(--sans);
+    font-size:11px;
+    color:var(--muted);
+    margin:8px 0 0;
+    max-width:48ch;
+  }
   /* SVG text styles */
   .ax-label{font-family:var(--sans);font-size:9px;fill:var(--muted);}
   .ax-tick{stroke:var(--hair);stroke-width:1;}
@@ -107,6 +114,7 @@
   .col-frame{fill:none;stroke:#cdbfae;stroke-width:.75;}
   .legend-title{font-family:var(--sans);font-size:10px;fill:var(--ink);}
   .legend-tick{font-family:var(--mono);font-size:9px;fill:var(--muted);}
+  .legend-mark{font-family:var(--sans);font-size:9px;fill:var(--ink);}
   .profile-path{
     fill:none;stroke:#27170f;stroke-width:1.4;stroke-linejoin:round;
     opacity:0;transition:opacity .25s ease;
@@ -136,10 +144,10 @@
   <p class="kicker">Gulf of Mexico</p>
   <!-- Headline & dek are placeholders for the author to rewrite. -->
   <h1>The Gulf is warming all the way down.</h1>
-  <p class="dek">The sea surface is heating fastest, but the warming reaches deep into the water column.</p>
+  <p class="dek">The sea surface has warmed about 1 °C since 1970 — roughly twice the pace of the global ocean — and the heat reaches deep into the water column.</p>
 
   <figure>
-    <svg class="chart" viewBox="0 0 360 650" role="img"
+    <svg class="chart show-profile" viewBox="0 0 360 650" role="img"
          aria-labelledby="chartTitle chartDesc" id="chart">
       <title id="chartTitle">Gulf of Mexico ocean warming by depth, 1955–2022</title>
       <desc id="chartDesc">A vertical cross-section of the water column from the sea
@@ -163,8 +171,10 @@
       <g id="svgRoot"></g>
     </svg>
 
+    <p class="scale-note">Depth axis is square-root–scaled to show the upper ocean in detail.</p>
+
     <!-- Color-scale legend -->
-    <svg class="legend" viewBox="0 0 360 56" role="img" aria-label="Color scale: warming rate in degrees Celsius per decade, from 0 (pale) to 0.20 (deep red).">
+    <svg class="legend" viewBox="0 0 360 88" role="img" aria-label="Color scale: warming rate in degrees Celsius per decade, from 0 (pale) to 0.20 (deep red). Reference marks show the global-ocean surface rate near 0.09 and the Gulf surface rate near 0.19 — roughly double.">
       <defs>
         <linearGradient id="legendRamp" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0"    stop-color="#fff7ec"/>
@@ -178,10 +188,11 @@
       <text class="legend-title" x="6" y="12">Warming rate (°C per decade)</text>
       <rect x="6" y="20" width="348" height="12" fill="url(#legendRamp)" stroke="#cdbfae" stroke-width=".5"/>
       <g id="legendTicks"></g>
+      <g id="legendMarks"></g>
     </svg>
 
     <div class="controls">
-      <button class="toggle" id="profileBtn" type="button" aria-pressed="false">
+      <button class="toggle" id="profileBtn" type="button" aria-pressed="true">
         <span class="dot" aria-hidden="true"></span>
         Show exact profile line
       </button>
@@ -191,7 +202,10 @@
       Source: NOAA World Ocean Atlas 2023 decadal climatology (in-situ ocean
       profiles). Warming rate is the linear temperature trend at each depth,
       1955–2022, averaged over the Gulf of Mexico. Surface rate independently
-      matches Wang et al. (2023).
+      matches Wang et al. (2023), whose profile-based global-ocean surface rate
+      (~0.09 °C/decade) is the “global” reference mark; the ~1 °C of surface
+      warming since 1970 is also from Wang et al. (2023). Deep rate below this
+      view from Ochoa et al. (2021).
     </figcaption>
   </figure>
 
@@ -218,7 +232,10 @@
   var COL_X = 42, COL_W = 44, COL_R = COL_X + COL_W; // column 42..86
   var DOMAIN = 0.20; // fixed color-scale domain, do NOT auto-scale
 
-  function depthY(d){ return TOP + (d / 2000) * COL_H; }
+  // Square-root depth transform: gives the upper ocean (where warming varies)
+  // most of the vertical space. Used everywhere a depth maps to a position.
+  function depthFrac(d){ return Math.sqrt(d / 2000); }
+  function depthY(d){ return TOP + depthFrac(d) * COL_H; }
   function rateX(r){ return COL_X + (Math.min(r, DOMAIN) / DOMAIN) * COL_W; }
 
   // ---- ColorBrewer "OrRd" sequential ramp, fixed domain 0..0.20 ----
@@ -259,7 +276,7 @@
   var grad=document.getElementById("depthRamp");
   DATA.forEach(function(d){
     grad.appendChild(el("stop",{
-      offset:(d[0]/2000*100)+"%",
+      offset:(depthFrac(d[0])*100)+"%",
       "stop-color":ramp(d[1])
     }));
   });
@@ -275,7 +292,7 @@
   root.appendChild(el("line",{x1:COL_X,y1:TOP,x2:COL_R,y2:TOP,"class":"surface-line"}));
 
   // ---- 3. Depth axis (left) ----
-  var AX_TICKS=[0,250,500,750,1000,1500,2000];
+  var AX_TICKS=[0,100,250,500,1000,1500,2000];
   AX_TICKS.forEach(function(d){
     var y=depthY(d);
     root.appendChild(el("line",{x1:COL_X-5,y1:y,x2:COL_X,y2:y,"class":"ax-tick"}));
@@ -291,14 +308,17 @@
     for(var i=0;i<DATA.length;i++) if(DATA[i][0]===depth) return DATA[i][1];
     return null;
   }
-  [[30],[250],[2000]].forEach(function(p){
+  // Rates rounded to 2 significant figures — decade-to-decade scatter dwarfs
+  // 0.001 °C/decade, so three-decimal labels imply false precision.
+  // The 2,000 m label is dropped: that depth is least reliable, and the deep
+  // italic note owns the deep story (one number per idea).
+  [[30,"0.19"],[250,"0.06"]].forEach(function(p){
     var d=p[0], r=rateAt(d), y=depthY(d);
     var dark = r > 0.13; // dark column -> white text, else ink
-    var yy = d===2000 ? y-4 : y+3; // keep 2000 label inside column
     root.appendChild(el("text",{
-      x:COL_R-3, y:yy, "text-anchor":"end", "class":"val-label",
+      x:COL_R-3, y:y+3, "text-anchor":"end", "class":"val-label",
       fill: dark ? "#ffffff" : "#3a1a10"
-    }, r.toFixed(3)));
+    }, p[1]));
   });
 
   // ---- 5. Annotations with thin leader lines ----
@@ -343,6 +363,25 @@
     legTicks.appendChild(el("line",{x1:x,y1:32,x2:x,y2:36,stroke:"#9a948c","stroke-width":1}));
     legTicks.appendChild(el("text",{x:x,y:47,"text-anchor":"middle","class":"legend-tick"},
       v.toFixed(2)));
+  });
+
+  // ---- Reference marks on the legend bar: "twice the global rate" made visible.
+  // Markers sit ON the bar (rate is encoded as color, not horizontal position
+  // on the column). Drawn with a white casing so they read in a grayscale render.
+  // Global rate ~0.09 is Wang et al. (2023)'s profile-based figure — kept tied
+  // to Wang, not presented as a universal "twice".
+  var legMarks=document.getElementById("legendMarks");
+  function legX(v){ return 6+(v/0.20)*348; }
+  [
+    {v:0.09, label:"Global-ocean surface", labelY:62, anchor:"middle"},
+    {v:0.19, label:"Gulf surface",         labelY:78, anchor:"end"}
+  ].forEach(function(m){
+    var x=legX(m.v);
+    legMarks.appendChild(el("line",{x1:x,y1:17,x2:x,y2:35,stroke:"#ffffff","stroke-width":3}));
+    legMarks.appendChild(el("line",{x1:x,y1:17,x2:x,y2:35,stroke:"#1a1a1a","stroke-width":1.4}));
+    legMarks.appendChild(el("line",{x1:x,y1:35,x2:x,y2:m.labelY-9,"class":"anno-lead"}));
+    legMarks.appendChild(el("circle",{cx:x,cy:m.labelY-9,r:1.6,"class":"anno-dot"}));
+    legMarks.appendChild(el("text",{x:x,y:m.labelY,"text-anchor":m.anchor,"class":"legend-mark"},m.label));
   });
 
   // ---- Profile toggle ----
